@@ -9,7 +9,7 @@
 
 using bbox = ppc::bounding_box<int>;
 using point = bbox::point_type;
-using box_tree = ppc::volume_tree<bbox, int, std::equal_to<bbox>, ppc::Intersect, ppc::Expand, ppc::host_allocator>;
+using box_tree = ppc::volume_tree<bbox, int, ppc::Intersect, ppc::Expand, ppc::host_allocator>;
 
 TEST_CASE("Bounding box initialization", "[bbox]")
 {
@@ -143,6 +143,22 @@ TEST_CASE("Box tree insertion of 2 elements", "[box_tree]")
 	btree.insert({ { { 5, 5, 5 },{ 15, 15, 15 } }, 2 });
 
 	REQUIRE(btree.size() == 2);
+	int i = 0;
+	for (const auto& value : btree)
+	{
+		++i;
+		REQUIRE(value.second == i);
+	}
+}
+
+TEST_CASE("Box tree insertion of 3 elements", "[box_tree]")
+{
+	box_tree btree;
+	btree.insert({ { { 0, 0, 0 },{ 10, 10, 10 } }, 1 });
+	btree.insert({ { { 5, 5, 5 },{ 15, 15, 15 } }, 2 });
+	btree.insert({ { { -1, 0, 1 },{ 10, 10, 20 } }, 3 });
+
+	REQUIRE(btree.size() == 3);
 	int i = 0;
 	for (const auto& value : btree)
 	{

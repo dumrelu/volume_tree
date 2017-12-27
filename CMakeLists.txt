@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(include/)
 add_executable(unit_tests test/unit_tests.cpp)
+#target_compile_features(unit_tests PRIVATE cxx_lambda_init_captures)
 
 enable_testing()
 add_test(UnitTests unit_tests)
