@@ -38,30 +38,36 @@ namespace ppc
 		point_type max{};
 	};
 
-	template <typename T>
-	void expand(bounding_box<T>& box, const typename bounding_box<T>::point_type& point)
+	struct Expand
 	{
-		const auto& min = box.min;
-		const auto& max = box.max;
+		template <typename T>
+		void operator()(bounding_box<T>& box, const typename bounding_box<T>::point_type& point)
+		{
+			const auto& min = box.min;
+			const auto& max = box.max;
 
-		box.min = { std::min(min.x, point.x), std::min(min.y, point.y), std::min(min.z, point.z) };
-		box.max = { std::max(max.x, point.x), std::max(max.y, point.y), std::max(max.z, point.z) };
-	}
+			box.min = { std::min(min.x, point.x), std::min(min.y, point.y), std::min(min.z, point.z) };
+			box.max = { std::max(max.x, point.x), std::max(max.y, point.y), std::max(max.z, point.z) };
+		}
 
-	template <typename T>
-	void expand(bounding_box<T>& box1, const bounding_box<T>& box2)
+		template <typename T>
+		void operator()(bounding_box<T>& box1, const bounding_box<T>& box2)
+		{
+			(*this)(box1, box2.min);
+			(*this)(box1, box2.max);
+		}
+	};
+
+	struct Intersect
 	{
-		expand(box1, box2.min);
-		expand(box1, box2.max);
-	}
-
-	template <typename T>
-	bool intersects(const bounding_box<T>& box1, const bounding_box<T>& box2)
-	{
-		bool noIntersection =
-			box1.max.x < box2.min.x || box1.min.x > box2.max.x ||
-			box1.max.y < box2.min.y || box1.min.y > box2.max.y ||
-			box1.max.z < box2.min.z || box1.min.z > box2.max.z;
-		return !noIntersection;
-	}
+		template <typename T>
+		bool operator()(const bounding_box<T>& box1, const bounding_box<T>& box2)
+		{
+			bool noIntersection =
+				box1.max.x < box2.min.x || box1.min.x > box2.max.x ||
+				box1.max.y < box2.min.y || box1.min.y > box2.max.y ||
+				box1.max.z < box2.min.z || box1.min.z > box2.max.z;
+			return !noIntersection;
+		}
+	};
 }
