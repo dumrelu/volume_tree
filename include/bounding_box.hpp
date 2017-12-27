@@ -36,6 +36,18 @@ namespace ppc
 
 		point_type min{};
 		point_type max{};
+
+		template <typename U>
+		bool operator==(const bounding_box<U>& other) const
+		{
+			return min == other.min && max == other.max;
+		}
+
+		template <typename U>
+		bool operator!=(const bounding_box<U>& other) const
+		{
+			return !(*this == other);
+		}
 	};
 
 	struct Expand

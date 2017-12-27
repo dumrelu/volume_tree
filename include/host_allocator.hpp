@@ -10,6 +10,12 @@ namespace ppc
 			using type = T*;
 		};
 
+		template <typename T, typename... Args>
+		static T* allocate(Args&&... args)
+		{
+			return new T{ std::forward<Args>(args)... };
+		}
+
 		template <typename T>
 		static T* allocate()
 		{

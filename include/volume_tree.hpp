@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <type_traits>
 #include <utility>
 
@@ -25,6 +26,11 @@ namespace ppc
 			node_ptr parent{};
 			node_ptr left{};
 			node_ptr right{};
+
+			node(value_ptr val = nullptr)
+				: value(val)
+			{
+			}
 		};
 
 		template <
@@ -40,7 +46,10 @@ namespace ppc
 			iterator(node_ptr current)
 				: m_current{ current }
 			{
-				//TODO: check if m_current is a leaf?
+				if (m_current)
+				{
+					for (; m_current->left != nullptr; m_current = m_current->left);
+				}
 			}
 
 			bool operator==(const iterator& other) const
@@ -128,6 +137,7 @@ namespace ppc
 	template <
 		typename V, 
 		typename T, 
+		typename Compare, 
 		typename Intersect, 
 		typename Expand, 
 		typename Allocator
@@ -136,6 +146,7 @@ namespace ppc
 	{
 	public:
 		using allocator_type = Allocator;
+		using volume_compare = Compare;
 		using volume_intersection = Intersect;
 		using volume_expand = Expand;
 		template <typename P> using ptr_type = typename detail::PtrType<typename Allocator::ptr_type, P>::type;
@@ -146,14 +157,49 @@ namespace ppc
 		using value_type = typename node_type::value_type;
 		using iterator = detail::iterator<value_type, node_ptr>;
 		using const_iterator = detail::iterator<const value_type, node_ptr>;
+		using size_type = std::size_t;
 		//TODO: pointers, references, etc
 
+		iterator insert(const value_type& value)
+		{
+			auto valuePtr = m_allocator.allocate<value_type>(value);
+			if (m_size == 0)
+			{
+				m_root = m_allocator.allocate<node_type>(valuePtr);
+				++m_size;
+				return iterator{ m_root };
+			}
+			else if (m_size == 1)
+			{
+				auto newRoot = m_allocator.allocate<node_type>();
+				newRoot->left = m_root;
+				newRoot->right = m_allocator.allocate<node_type>(valuePtr);
+				m_root = newRoot;
+				++m_size;
+				return iterator{ m_root->right };
+			}
+			else
+			{
+				return iterator{nullptr};
+			}
+		}
 
+		iterator begin() { return iterator{ m_root }; }
+		const_iterator begin() const { return const_iterator{ m_root }; }
+		const_iterator cbegin() const { return const_iterator{ m_root }; }
+
+		iterator end() { return iterator{ nullptr }; }
+		const_iterator end() const { return const_iterator{ nullptr }; }
+		const_iterator cend() { return const_iterator{ nullptr }; }
+
+		size_type size() const { return m_size; }
 
 	private:
 		node_ptr m_root;
 		allocator_type m_allocator;
+		volume_compare m_compare;
 		volume_intersection m_intersects;
 		volume_expand m_expand;
+		size_type m_size{};
 	};
 }
