@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <utility>
 
 namespace ppc
 {
@@ -37,6 +38,15 @@ namespace ppc
 		point_type min{};
 		point_type max{};
 
+		point_type center() const
+		{
+			return {
+				(min.x + max.x) / static_cast<scalar_type>(2),
+				(min.y + max.y) / static_cast<scalar_type>(2),
+				(min.z + max.z) / static_cast<scalar_type>(2),
+			};
+		}
+
 		template <typename U>
 		bool operator==(const bounding_box<U>& other) const
 		{
@@ -47,6 +57,15 @@ namespace ppc
 		bool operator!=(const bounding_box<U>& other) const
 		{
 			return !(*this == other);
+		}
+
+		template <typename U>
+		bool operator<(const bounding_box<U>& other) const
+		{
+			const auto thisCenter = center();
+			const auto otherCenter = other.center();
+			return std::make_tuple(thisCenter.x, thisCenter.y, thisCenter.z) <
+				std::make_tuple(otherCenter.x, otherCenter.y, otherCenter.z);
 		}
 	};
 

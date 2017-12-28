@@ -2,8 +2,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <iterator>
 #include <type_traits>
 #include <utility>
+
+#define PPC_SORTED_INSERT
 
 namespace ppc
 {
@@ -42,7 +45,7 @@ namespace ppc
 			typename Value, 
 			typename NodePtr
 		>
-		struct iterator
+		struct iterator : public std::iterator<std::forward_iterator_tag, Value>
 		{
 			using value_type = Value;
 			using const_value_type = const std::remove_cv_t<value_type>;
@@ -132,6 +135,8 @@ namespace ppc
 			node_ptr m_current{};
 		};
 
+		
+
 		template <template <typename> typename Ptr, typename T>
 		struct PtrType
 		{
@@ -144,6 +149,7 @@ namespace ppc
 		typename T, 
 		typename Intersect, 
 		typename Expand, 
+		typename Comparator, 
 		typename Allocator
 	>
 	class volume_tree
@@ -152,6 +158,7 @@ namespace ppc
 		using allocator_type = Allocator;
 		using volume_intersection = Intersect;
 		using volume_expand = Expand;
+		using volume_compare = Comparator;
 		template <typename P> using ptr_type = typename detail::PtrType<typename Allocator::ptr_type, P>::type;
 		using node_type = detail::node<V, T, ptr_type>;
 		using node_ptr = ptr_type<node_type>;
@@ -188,6 +195,13 @@ namespace ppc
 				m_root = newRoot;
 				++m_size;
 
+#ifdef PPC_SORTED_INSERT
+				if (!m_compare(m_root->left->volume, m_root->right->volume))
+				{
+					std::swap(*m_root->left, *m_root->right);
+				}
+#endif
+
 				return iterator{ m_root->right };
 			}
 			else
@@ -220,6 +234,17 @@ namespace ppc
 					set_left(chainEnd, newNode);
 				}
 				
+#ifdef PPC_SORTED_INSERT
+				auto posIt = std::lower_bound(begin(), end(), value,
+					[&](const value_type& lhs, const value_type& rhs)
+					{
+						return m_compare(lhs.first, rhs.first);
+					}
+				);
+
+				std::rotate(posIt, iterator{ newNode }, end());
+#endif
+
 				++m_size;
 				return iterator{ newNode };
 			}
@@ -336,6 +361,7 @@ namespace ppc
 		allocator_type m_allocator;
 		volume_intersection m_intersects;
 		volume_expand m_expand;
+		volume_compare m_compare;
 		size_type m_size{};
 	};
 }

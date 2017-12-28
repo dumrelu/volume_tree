@@ -5,11 +5,15 @@
 #include "host_allocator.hpp"
 #include "volume_tree.hpp"
 
+#include <array>
 #include <functional>
+#include <numeric>
+#include <random>
+#include <unordered_set>
 
 using bbox = ppc::bounding_box<int>;
 using point = bbox::point_type;
-using box_tree = ppc::volume_tree<bbox, int, ppc::Intersect, ppc::Expand, ppc::host_allocator>;
+using box_tree = ppc::volume_tree<bbox, int, ppc::Intersect, ppc::Expand, std::less<bbox>, ppc::host_allocator>;
 
 TEST_CASE("Bounding box initialization", "[bbox]")
 {
@@ -143,13 +147,12 @@ TEST_CASE("Box tree insertion of 2 elements", "[box_tree]")
 	btree.insert({ { { 5, 5, 5 },{ 15, 15, 15 } }, 2 });
 
 	REQUIRE(btree.size() == 2);
-	int i = 0;
+	std::unordered_set<int> elements;
 	for (const auto& value : btree)
 	{
-		++i;
-		REQUIRE(value.second == i);
+		elements.insert(value.second);
 	}
-	REQUIRE(i == static_cast<int>(btree.size()));
+	REQUIRE(elements.size() == btree.size());
 }
 
 TEST_CASE("Box tree insertion of 3 elements", "[box_tree]")
@@ -160,13 +163,12 @@ TEST_CASE("Box tree insertion of 3 elements", "[box_tree]")
 	btree.insert({ { { -1, 0, 1 },{ 10, 10, 20 } }, 3 });
 
 	REQUIRE(btree.size() == 3);
-	int i = 0;
+	std::unordered_set<int> elements;
 	for (const auto& value : btree)
 	{
-		++i;
-		REQUIRE(value.second == i);
+		elements.insert(value.second);
 	}
-	REQUIRE(i == static_cast<int>(btree.size()));
+	REQUIRE(elements.size() == btree.size());
 }
 
 TEST_CASE("Box tree insertion of 4 elements", "[box_tree]")
@@ -178,13 +180,12 @@ TEST_CASE("Box tree insertion of 4 elements", "[box_tree]")
 	btree.insert({ { { 0, -2, 0 },{ 16, 10, 20 } }, 4 });
 
 	REQUIRE(btree.size() == 4);
-	int i = 0;
+	std::unordered_set<int> elements;
 	for (const auto& value : btree)
 	{
-		++i;
-		REQUIRE(value.second == i);
+		elements.insert(value.second);
 	}
-	REQUIRE(i == static_cast<int>(btree.size()));
+	REQUIRE(elements.size() == btree.size());
 }
 
 TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
@@ -197,13 +198,12 @@ TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
 	btree.insert({ { { 0, 0, -3 },{ 16, 17, 20 } }, 5 });
 
 	REQUIRE(btree.size() == 5);
-	int i = 0;
+	std::unordered_set<int> elements;
 	for (const auto& value : btree)
 	{
-		++i;
-		REQUIRE(value.second == i);
+		elements.insert(value.second);
 	}
-	REQUIRE(i == static_cast<int>(btree.size()));
+	REQUIRE(elements.size() == btree.size());
 }
 
 TEST_CASE("Box tree insertion of n elements", "[box_tree]")
@@ -219,11 +219,39 @@ TEST_CASE("Box tree insertion of n elements", "[box_tree]")
 	
 
 	REQUIRE(btree.size() == N);
-	int i = 0;
+	std::unordered_set<int> elements;
 	for (const auto& value : btree)
 	{
-		REQUIRE(value.second == i);
-		++i;
+		elements.insert(value.second);
 	}
-	REQUIRE(i == static_cast<int>(btree.size()));
+	REQUIRE(elements.size() == btree.size());
+}
+
+#include <iostream>
+
+TEST_CASE("Box tree ordering", "[box_tree]")
+{
+	constexpr int N = 100;
+	std::array<int, N> values;
+	std::iota(values.begin(), values.end(), 0);
+
+	std::random_device rd;
+	std::default_random_engine engine;
+	//std::shuffle(values.begin(), values.end(), engine);
+
+	box_tree btree;
+	for (auto i : values)
+	{
+		btree.insert({ { { i, 0, 0 },{ i, 0, 0 } }, i });
+	}
+	REQUIRE(btree.size() == N);
+
+	const auto isSorted = std::is_sorted(
+		btree.cbegin(), btree.cend(), 
+		[](const auto& lhs, const auto& rhs)
+		{
+			return lhs.second < rhs.second;
+		}
+	);
+	REQUIRE(isSorted);
 }
