@@ -149,6 +149,7 @@ TEST_CASE("Box tree insertion of 2 elements", "[box_tree]")
 		++i;
 		REQUIRE(value.second == i);
 	}
+	REQUIRE(i == static_cast<int>(btree.size()));
 }
 
 TEST_CASE("Box tree insertion of 3 elements", "[box_tree]")
@@ -165,4 +166,42 @@ TEST_CASE("Box tree insertion of 3 elements", "[box_tree]")
 		++i;
 		REQUIRE(value.second == i);
 	}
+	REQUIRE(i == static_cast<int>(btree.size()));
+}
+
+TEST_CASE("Box tree insertion of 4 elements", "[box_tree]")
+{
+	box_tree btree;
+	btree.insert({ { { 0, 0, 0 },{ 10, 10, 10 } }, 1 });
+	btree.insert({ { { 5, 5, 5 },{ 15, 15, 15 } }, 2 });
+	btree.insert({ { { -1, 0, 1 },{ 10, 10, 20 } }, 3 });
+	btree.insert({ { { 0, -2, 0 },{ 16, 10, 20 } }, 4 });
+
+	REQUIRE(btree.size() == 4);
+	int i = 0;
+	for (const auto& value : btree)
+	{
+		++i;
+		REQUIRE(value.second == i);
+	}
+	REQUIRE(i == static_cast<int>(btree.size()));
+}
+
+TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
+{
+	box_tree btree;
+	btree.insert({ { { 0, 0, 0 },{ 10, 10, 10 } }, 1 });
+	btree.insert({ { { 5, 5, 5 },{ 15, 15, 15 } }, 2 });
+	btree.insert({ { { -1, 0, 1 },{ 10, 10, 20 } }, 3 });
+	btree.insert({ { { 0, -2, 0 },{ 16, 10, 20 } }, 4 });
+	btree.insert({ { { 0, 0, -3 },{ 16, 17, 20 } }, 5 });
+
+	REQUIRE(btree.size() == 5);
+	int i = 0;
+	for (const auto& value : btree)
+	{
+		++i;
+		REQUIRE(value.second == i);
+	}
+	REQUIRE(i == static_cast<int>(btree.size()));
 }

@@ -194,29 +194,31 @@ namespace ppc
 
 				auto parentPair = find_parent(m_root, 0);
 				auto parent = parentPair.first;
-				auto parentLevel = parentPair.second;
+				auto parentLevel = static_cast<int>(parentPair.second);
 
-				if (!parent)
+				if (parent && parent->left->value && !parent->right)
 				{
-					auto newRoot = m_allocator.allocate<node_type>();
-					set_left(newRoot, m_root, false);
-					
-					auto chainPair = allocate_chain(h - 1);
-					auto chainRoot = chainPair.first;
-					auto chainEnd = chainPair.second;
-
-					set_right(newRoot, chainRoot, false);
-					set_left(chainEnd, newNode);
-					
-					m_root = newRoot;
-					++m_size;
+					set_right(parent, newNode);
 				}
 				else
 				{
-					//TODO
-					assert(false);
-				}
+					if (!parent)
+					{
+						parent = m_allocator.allocate<node_type>();
+						parentLevel = -1;
+						set_left(parent, m_root, false);
+						m_root = parent;
+					}
 
+					auto chainPair = allocate_chain(h - 2 - parentLevel);
+					auto chainRoot = chainPair.first;
+					auto chainEnd = chainPair.second;
+
+					set_right(parent, chainRoot, false);
+					set_left(chainEnd, newNode);
+				}
+				
+				++m_size;
 				return iterator{ newNode };
 			}
 		}
@@ -243,19 +245,24 @@ namespace ppc
 
 		std::pair<node_ptr, size_type> find_parent(node_ptr node, size_type level)
 		{
-			if (node->right)
+			if (node->right)		//Parent node
 			{
 				return find_parent(node->right, level + 1);
 			}
-			else if (node->left)
+			else if (node->left)	//Parent node
 			{
-				return find_parent(node->left, level + 1);
+				auto res = find_parent(node->left, level + 1);
+				if (!res.first)
+				{
+					return { node, level };
+				}
+				return res;
 			}
-			else if(node->parent->right == node)
+			else if (node->parent->right == node)	//Right child node
 			{
 				return { nullptr, 0 };
 			}
-			else
+			else	//Left child
 			{
 				return { node->parent, level - 1 };
 			}
@@ -317,7 +324,7 @@ namespace ppc
 
 			while (--size)
 			{
-				node->left = m_allocator.allocate<node_type>();
+				set_left(node, m_allocator.allocate<node_type>(), false);
 				node = node->left;
 			}
 			return { chainRoot, node };
