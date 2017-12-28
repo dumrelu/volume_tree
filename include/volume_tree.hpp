@@ -162,13 +162,15 @@ namespace ppc
 		using const_iterator = detail::iterator<const value_type, node_ptr>;
 		using size_type = std::size_t;
 		//TODO: pointers, references, etc
+		//TODO: for cuda to compile: replace ptr_type
 
+		//TODO: balance on insert. sort by compare operator
 		iterator insert(const value_type& value)
 		{
 			//TODO: use structured bindings for C++17
 
-			auto valuePtr = m_allocator.allocate<value_type>(value);
-			auto newNode = m_allocator.allocate<node_type>(valuePtr);
+			auto valuePtr = m_allocator.allocate(value_type{ value });
+			auto newNode = m_allocator.allocate(node_type{ valuePtr });
 
 			if (m_size == 0)
 			{
@@ -179,7 +181,7 @@ namespace ppc
 			}
 			else if (m_size == 1)
 			{
-				auto newRoot = m_allocator.allocate<node_type>();
+				auto newRoot = m_allocator.allocate(node_type{});
 				set_left(newRoot, m_root, false);
 				set_right(newRoot, newNode);
 
@@ -204,7 +206,7 @@ namespace ppc
 				{
 					if (!parent)
 					{
-						parent = m_allocator.allocate<node_type>();
+						parent = m_allocator.allocate(node_type{});
 						parentLevel = -1;
 						set_left(parent, m_root, false);
 						m_root = parent;
@@ -319,12 +321,12 @@ namespace ppc
 
 		std::pair<node_ptr, node_ptr> allocate_chain(size_type size)
 		{
-			auto chainRoot = m_allocator.allocate<node_type>();
+			auto chainRoot = m_allocator.allocate(node_type{});
 			auto node = chainRoot;
 
 			while (--size)
 			{
-				set_left(node, m_allocator.allocate<node_type>(), false);
+				set_left(node, m_allocator.allocate(node_type{}), false);
 				node = node->left;
 			}
 			return { chainRoot, node };

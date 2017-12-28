@@ -10,22 +10,16 @@ namespace ppc
 			using type = T*;
 		};
 
-		template <typename T, typename... Args>
-		static T* allocate(Args&&... args)
-		{
-			return new T{ std::forward<Args>(args)... };
-		}
-
 		template <typename T>
-		static T* allocate()
+		static T* allocate(T value)
 		{
-			return new T{};
+			return new T{ std::move(value) };
 		}
 
 		template <typename T>
 		static void deallocate(T* ptr)
 		{
-			delete T;
+			delete ptr;
 		}
 	};
 }

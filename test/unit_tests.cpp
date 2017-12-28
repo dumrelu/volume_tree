@@ -208,6 +208,7 @@ TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
 
 TEST_CASE("Box tree insertion of n elements", "[box_tree]")
 {
+	//Seems that the height of the tree is equal to std::ceil(std::log2(size)) + 2
 	constexpr int N = 50;
 
 	box_tree btree;
