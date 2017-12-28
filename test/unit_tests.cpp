@@ -209,7 +209,7 @@ TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
 TEST_CASE("Box tree insertion of n elements", "[box_tree]")
 {
 	//Seems that the height of the tree is equal to std::ceil(std::log2(size)) + 2
-	constexpr int N = 50;
+	constexpr auto N = 50;
 
 	box_tree btree;
 	for (auto i = 0; i < N; ++i)
@@ -231,7 +231,7 @@ TEST_CASE("Box tree insertion of n elements", "[box_tree]")
 
 TEST_CASE("Box tree ordering", "[box_tree]")
 {
-	constexpr int N = 100;
+	constexpr auto N = 100;
 	std::array<int, N> values;
 	std::iota(values.begin(), values.end(), 0);
 
@@ -254,4 +254,34 @@ TEST_CASE("Box tree ordering", "[box_tree]")
 		}
 	);
 	REQUIRE(isSorted);
+}
+
+TEST_CASE("Finding a box", "[box_tree]")
+{
+	constexpr auto N = 50;
+
+	box_tree btree;
+	for (auto i = 0; i < N; ++i)
+	{
+		btree.insert({ { { i, i, i },{ i + 1, i + 1, i + 1 } }, i });
+	}
+
+	auto allFound = true;
+	for (const auto& value : btree)
+	{
+		allFound = (btree.find(value.first) != btree.end());
+		if (!allFound)
+		{
+			break;
+		}
+	}
+	REQUIRE(allFound);
+
+	constexpr auto center = N / 2;
+	bbox similarButDifferent{ {center, center, center}, {center + 1, center + 1, center + 2} };
+	REQUIRE(static_cast<const box_tree&>(btree).find(similarButDifferent) == btree.cend());
+
+	constexpr auto outsideN = N * 2;
+	bbox notIntersectingRoot{ { outsideN, outsideN, outsideN },{ outsideN + 1, outsideN + 1, outsideN + 1 } };
+	REQUIRE(static_cast<const box_tree&>(btree).find(notIntersectingRoot) == btree.cend());
 }

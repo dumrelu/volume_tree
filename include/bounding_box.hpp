@@ -92,7 +92,7 @@ namespace ppc
 	struct Intersect
 	{
 		template <typename T>
-		bool operator()(const bounding_box<T>& box1, const bounding_box<T>& box2)
+		bool operator()(const bounding_box<T>& box1, const bounding_box<T>& box2) const
 		{
 			bool noIntersection =
 				box1.max.x < box2.min.x || box1.min.x > box2.max.x ||

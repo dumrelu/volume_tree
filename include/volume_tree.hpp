@@ -60,6 +60,7 @@ namespace ppc
 				}
 			}
 
+			//TODO: generic operator==
 			bool operator==(const iterator& other) const
 			{
 				return m_current == other.m_current;
@@ -170,8 +171,8 @@ namespace ppc
 		using size_type = std::size_t;
 		//TODO: pointers, references, etc
 		//TODO: for cuda to compile: replace ptr_type
+		//TODO: find_intersections(volume)
 
-		//TODO: balance on insert. sort by compare operator
 		iterator insert(const value_type& value)
 		{
 			//TODO: use structured bindings for C++17
@@ -184,7 +185,7 @@ namespace ppc
 				m_root = newNode;
 				++m_size;
 
-				return iterator{ m_root };
+				return { m_root };
 			}
 			else if (m_size == 1)
 			{
@@ -202,7 +203,7 @@ namespace ppc
 				}
 #endif
 
-				return iterator{ m_root->right };
+				return { m_root->right };
 			}
 			else
 			{
@@ -246,17 +247,27 @@ namespace ppc
 #endif
 
 				++m_size;
-				return iterator{ newNode };
+				return { newNode };
 			}
 		}
 
-		iterator begin() { return iterator{ m_root }; }
-		const_iterator begin() const { return const_iterator{ m_root }; }
-		const_iterator cbegin() const { return const_iterator{ m_root }; }
+		iterator find(const volume_type& volume)
+		{
+			return { find_node(m_root, volume) };
+		}
 
-		iterator end() { return iterator{ nullptr }; }
-		const_iterator end() const { return const_iterator{ nullptr }; }
-		const_iterator cend() { return const_iterator{ nullptr }; }
+		const_iterator find(const volume_type& volume) const
+		{
+			return { find_node(m_root, volume) };
+		}
+
+		iterator begin() { return { m_root }; }
+		const_iterator begin() const { return { m_root }; }
+		const_iterator cbegin() const { return { m_root }; }
+
+		iterator end() { return { nullptr }; }
+		const_iterator end() const { return { nullptr }; }
+		const_iterator cend() { return { nullptr }; }
 
 		size_type size() const { return m_size; }
 
@@ -355,6 +366,39 @@ namespace ppc
 				node = node->left;
 			}
 			return { chainRoot, node };
+		}
+
+		node_ptr find_node(node_ptr node, const volume_type& volume) const
+		{
+			if (!m_intersects(node->volume, volume))
+			{
+				return nullptr;
+			}
+
+			if (!m_compare(node->volume, volume) && !m_compare(volume, node->volume))
+			{
+				return node;
+			}
+
+			if (node->left && m_intersects(node->left->volume, volume))
+			{
+				auto foundNode = find_node(node->left, volume);
+				if (foundNode)	//C++17 if variable definition here
+				{
+					return foundNode;
+				}
+			}
+
+			if (node->right && m_intersects(node->right->volume, volume))
+			{
+				auto foundNode = find_node(node->right, volume);
+				if (foundNode)	//C++17 if variable definition here
+				{
+					return foundNode;
+				}
+
+			}
+			return nullptr;
 		}
 
 		node_ptr m_root;
