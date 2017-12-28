@@ -205,3 +205,24 @@ TEST_CASE("Box tree insertion of 5 elements", "[box_tree]")
 	}
 	REQUIRE(i == static_cast<int>(btree.size()));
 }
+
+TEST_CASE("Box tree insertion of n elements", "[box_tree]")
+{
+	constexpr int N = 50;
+
+	box_tree btree;
+	for (auto i = 0; i < N; ++i)
+	{
+		btree.insert({ { { i, i, i },{ i + 1, i + 1, i + 1 } }, i });
+	}
+	
+
+	REQUIRE(btree.size() == N);
+	int i = 0;
+	for (const auto& value : btree)
+	{
+		REQUIRE(value.second == i);
+		++i;
+	}
+	REQUIRE(i == static_cast<int>(btree.size()));
+}
