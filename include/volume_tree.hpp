@@ -138,12 +138,21 @@ namespace ppc
 			node_ptr m_current{};
 		};
 
-		
 
 		template <template <typename> typename Ptr, typename T>
 		struct PtrType
 		{
 			using type = typename Ptr<T>::type;
+		};
+
+
+		struct CallAssignmentOperator
+		{
+			template <typename Ptr>
+			void operator()(Ptr lhs, Ptr rhs)
+			{
+				*lhs = *rhs;
+			}
 		};
 	}
 
@@ -297,20 +306,20 @@ namespace ppc
 			m_size = 0;
 		}
 
-		template <typename V1,
-			typename T1,
-			typename Intersect1,
-			typename Expand1,
-			typename Comparator1,
-			typename Allocator1
-		>
-		PPC_MEMBER_FUNCTION void assign(const volume_tree<V1, T1, Intersect1, Expand1, Comparator1, Allocator1>& other)
+		template <typename PtrCopy>
+		PPC_MEMBER_FUNCTION void assign(const volume_tree& other, PtrCopy copy)
 		{
-			//TODO: copy intersect, expand, comparator, allocator?
-			for (const auto& value : other)
-			{
-				insert(value);
-			}
+			m_root = copy_node(other.m_root, copy);
+			m_allocator = other.m_allocator;
+			m_intersects = other.m_intersects;
+			m_expand = other.m_expand;
+			m_compare = other.m_compare;
+			m_size = other.m_size;
+		}
+
+		PPC_MEMBER_FUNCTION void assign(const volume_tree& other)
+		{
+			assign(other, detail::CallAssignmentOperator{});
 		}
 
 	private:
@@ -465,6 +474,37 @@ namespace ppc
 				m_allocator.deallocate(node->value);
 			}
 			m_allocator.deallocate(node);
+		}
+
+		template <typename PtrCopy>
+		PPC_MEMBER_FUNCTION node_ptr copy_node(node_ptr src, PtrCopy copy)
+		{	
+			auto destNode = m_allocator.allocate(node_type{});
+			copy(destNode, src);
+			auto* value = destNode->value;
+			auto* left = destNode->left;
+			auto* right = destNode->right;
+			auto* parent = destNode->parent;
+			
+			if (value)
+			{
+				destNode->value = m_allocator.allocate(value_type{});
+				copy(destNode->value, value);
+			}
+
+			if (left)
+			{
+				destNode->left = copy_node(left, copy);
+				destNode->left->parent = destNode;
+			}
+
+			if (right)
+			{
+				destNode->right = copy_node(right, copy);
+				destNode->right->parent = destNode;
+			}
+
+			return destNode;
 		}
 
 		node_ptr m_root{};
