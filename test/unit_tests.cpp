@@ -285,3 +285,18 @@ TEST_CASE("Finding a box", "[box_tree]")
 	bbox notIntersectingRoot{ { outsideN, outsideN, outsideN },{ outsideN + 1, outsideN + 1, outsideN + 1 } };
 	REQUIRE(static_cast<const box_tree&>(btree).find(notIntersectingRoot) == btree.cend());
 }
+
+TEST_CASE("Clear", "[box_tree]")
+{
+	constexpr auto N = 50;
+
+	box_tree btree;
+	for (auto i = 0; i < N; ++i)
+	{
+		btree.insert({ { { i, i, i },{ i + 1, i + 1, i + 1 } }, i });
+	}
+
+	btree.clear();
+	REQUIRE(btree.size() == 0);
+	REQUIRE(btree.empty());
+}

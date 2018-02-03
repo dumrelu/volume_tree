@@ -173,6 +173,14 @@ namespace ppc
 		//TODO: for cuda to compile: replace ptr_type
 		//TODO: find_intersections(volume)
 
+		volume_tree() = default;
+		volume_tree(const volume_tree&) = default;
+		volume_tree(volume_tree&&) = default;
+		volume_tree& operator=(const volume_tree&) = default;
+		volume_tree& operator=(volume_tree&&) = default;
+
+		~volume_tree() { deallocate(m_root); }
+
 		iterator insert(const value_type& value)
 		{
 			//TODO: use structured bindings for C++17
@@ -270,6 +278,14 @@ namespace ppc
 		const_iterator cend() { return { nullptr }; }
 
 		size_type size() const { return m_size; }
+		bool empty() const { return m_size == 0; }
+
+		void clear()
+		{
+			deallocate(m_root);
+			m_root = nullptr;
+			m_size = 0;
+		}
 
 	private:
 
@@ -401,7 +417,31 @@ namespace ppc
 			return nullptr;
 		}
 
-		node_ptr m_root;
+		void deallocate(node_ptr node)
+		{
+			if (!node)
+			{
+				return;
+			}
+
+			if (node->left)
+			{
+				deallocate(node->left);
+			}
+
+			if (node->right)
+			{
+				deallocate(node->right);
+			}
+
+			if (node->value)
+			{
+				m_allocator.deallocate(node->value);
+			}
+			m_allocator.deallocate(node);
+		}
+
+		node_ptr m_root{};
 		allocator_type m_allocator;
 		volume_intersection m_intersects;
 		volume_expand m_expand;
