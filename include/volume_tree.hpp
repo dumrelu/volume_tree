@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.hpp"
+
 #include <cassert>
 #include <cstdint>
 #include <iterator>
