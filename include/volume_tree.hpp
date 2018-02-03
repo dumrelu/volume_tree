@@ -174,9 +174,16 @@ namespace ppc
 		//TODO: find_intersections(volume)
 
 		volume_tree() = default;
-		volume_tree(const volume_tree&) = default;
+		volume_tree(const volume_tree& other) 
+		{ 
+			assign(other); 
+		}
 		volume_tree(volume_tree&&) = default;
-		volume_tree& operator=(const volume_tree&) = default;
+		volume_tree& operator=(const volume_tree&) 
+		{ 
+			assign(other); 
+			return *this; 
+		}
 		volume_tree& operator=(volume_tree&&) = default;
 
 		~volume_tree() { deallocate(m_root); }
@@ -285,6 +292,22 @@ namespace ppc
 			deallocate(m_root);
 			m_root = nullptr;
 			m_size = 0;
+		}
+
+		template <typename V1,
+			typename T1,
+			typename Intersect1,
+			typename Expand1,
+			typename Comparator1,
+			typename Allocator1
+		>
+		void assign(const volume_tree<V1, T1, Intersect1, Expand1, Comparator1, Allocator1>& other)
+		{
+			//TODO: copy intersect, expand, comparator, allocator?
+			for (const auto& value : other)
+			{
+				insert(value);
+			}
 		}
 
 	private:

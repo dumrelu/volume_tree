@@ -300,3 +300,28 @@ TEST_CASE("Clear", "[box_tree]")
 	REQUIRE(btree.size() == 0);
 	REQUIRE(btree.empty());
 }
+
+TEST_CASE("Assign", "[box_tree]")
+{
+	constexpr auto N = 50;
+
+	box_tree btree;
+	for (auto i = 0; i < N; ++i)
+	{
+		btree.insert({ { { i, i, i },{ i + 1, i + 1, i + 1 } }, i });
+	}
+
+	box_tree btreeCopy;
+	btreeCopy.assign(btree);
+	REQUIRE(btreeCopy.size() == btree.size());
+	auto allFound = true;
+	for (const auto& value : btree)
+	{
+		allFound = (btreeCopy.find(value.first) != btreeCopy.end());
+		if (!allFound)
+		{
+			break;
+		}
+	}
+	REQUIRE(allFound);
+}
