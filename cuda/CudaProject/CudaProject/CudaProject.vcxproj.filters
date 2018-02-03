@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="volume_tree">
+      <UniqueIdentifier>{e95cd87e-1691-4970-aa4b-401be66c263a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\bounding_box.hpp">
+      <Filter>volume_tree</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\config.hpp">
+      <Filter>volume_tree</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\host_allocator.hpp">
+      <Filter>volume_tree</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\volume_tree.hpp">
+      <Filter>volume_tree</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

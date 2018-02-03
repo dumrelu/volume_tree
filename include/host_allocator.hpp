@@ -1,5 +1,7 @@
 #pragma once
 
+#include "config.hpp"
+
 namespace ppc
 {
 	struct host_allocator
@@ -11,13 +13,13 @@ namespace ppc
 		};
 
 		template <typename T>
-		static T* allocate(T value)
+		PPC_MEMBER_FUNCTION static T* allocate(T value)
 		{
 			return new T{ std::move(value) };
 		}
 
 		template <typename T>
-		static void deallocate(T* ptr)
+		PPC_MEMBER_FUNCTION static void deallocate(T* ptr)
 		{
 			delete ptr;
 		}

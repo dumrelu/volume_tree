@@ -33,7 +33,7 @@ namespace ppc
 			node_ptr left{};
 			node_ptr right{};
 
-			node(value_ptr val = nullptr)
+			PPC_MEMBER_FUNCTION node(value_ptr val = nullptr)
 				: value(val)
 			{
 				if (value)
@@ -53,7 +53,7 @@ namespace ppc
 			using const_value_type = const std::remove_cv_t<value_type>;
 			using node_ptr = NodePtr;
 
-			iterator(node_ptr current)
+			PPC_MEMBER_FUNCTION iterator(node_ptr current)
 				: m_current{ current }
 			{
 				if (m_current)
@@ -63,41 +63,41 @@ namespace ppc
 			}
 
 			//TODO: generic operator==
-			bool operator==(const iterator& other) const
+			PPC_MEMBER_FUNCTION bool operator==(const iterator& other) const
 			{
 				return m_current == other.m_current;
 			}
 
-			bool operator!=(const iterator& other) const
+			PPC_MEMBER_FUNCTION bool operator!=(const iterator& other) const
 			{
 				return !(*this == other);
 			}
 
-			value_type& operator*()
+			PPC_MEMBER_FUNCTION value_type& operator*()
 			{
 				assert(m_current && m_current->value != nullptr);
 				return *m_current->value;
 			}
 
-			const_value_type& operator*() const
+			PPC_MEMBER_FUNCTION const_value_type& operator*() const
 			{
 				assert(m_current && m_current->value != nullptr);
 				return *m_current->value;
 			}
 
-			value_type* operator->()
+			PPC_MEMBER_FUNCTION value_type* operator->()
 			{
 				assert(m_current && m_current->value != nullptr);
 				return &(*m_current->value);
 			}
 
-			const_value_type* operator->() const
+			PPC_MEMBER_FUNCTION const_value_type* operator->() const
 			{
 				assert(m_current && m_current->value != nullptr);
 				return &(*m_current->value);
 			}
 
-			iterator& operator++()
+			PPC_MEMBER_FUNCTION iterator& operator++()
 			{
 				assert(m_current != nullptr);
 
@@ -127,7 +127,7 @@ namespace ppc
 				return *this;
 			}
 
-			iterator operator++(int)
+			PPC_MEMBER_FUNCTION iterator operator++(int)
 			{
 				auto tmp = *this;
 				++(*this);
@@ -162,7 +162,8 @@ namespace ppc
 		using volume_intersection = Intersect;
 		using volume_expand = Expand;
 		using volume_compare = Comparator;
-		template <typename P> using ptr_type = typename detail::PtrType<typename Allocator::ptr_type, P>::type;
+		//template <typename P> using ptr_type = typename detail::PtrType<typename Allocator::ptr_type, P>::type;
+		template <typename P> using ptr_type = P*;
 		using node_type = detail::node<V, T, ptr_type>;
 		using node_ptr = ptr_type<node_type>;
 		using volume_type = typename node_type::volume_type;
@@ -175,22 +176,22 @@ namespace ppc
 		//TODO: for cuda to compile: replace ptr_type
 		//TODO: find_intersections(volume)
 
-		volume_tree() = default;
-		volume_tree(const volume_tree& other) 
+		PPC_MEMBER_FUNCTION volume_tree() = default;
+		PPC_MEMBER_FUNCTION volume_tree(const volume_tree& other)
 		{ 
 			assign(other); 
 		}
-		volume_tree(volume_tree&&) = default;
-		volume_tree& operator=(const volume_tree&) 
+		PPC_MEMBER_FUNCTION volume_tree(volume_tree&&) = default;
+		PPC_MEMBER_FUNCTION volume_tree& operator=(const volume_tree&)
 		{ 
 			assign(other); 
 			return *this; 
 		}
-		volume_tree& operator=(volume_tree&&) = default;
+		PPC_MEMBER_FUNCTION volume_tree& operator=(volume_tree&&) = default;
 
-		~volume_tree() { deallocate(m_root); }
+		PPC_MEMBER_FUNCTION ~volume_tree() { deallocate(m_root); }
 
-		iterator insert(const value_type& value)
+		PPC_MEMBER_FUNCTION iterator insert(const value_type& value)
 		{
 			//TODO: use structured bindings for C++17
 
@@ -268,28 +269,28 @@ namespace ppc
 			}
 		}
 
-		iterator find(const volume_type& volume)
+		PPC_MEMBER_FUNCTION iterator find(const volume_type& volume)
 		{
 			return { find_node(m_root, volume) };
 		}
 
-		const_iterator find(const volume_type& volume) const
+		PPC_MEMBER_FUNCTION const_iterator find(const volume_type& volume) const
 		{
 			return { find_node(m_root, volume) };
 		}
 
-		iterator begin() { return { m_root }; }
-		const_iterator begin() const { return { m_root }; }
-		const_iterator cbegin() const { return { m_root }; }
+		PPC_MEMBER_FUNCTION iterator begin() { return { m_root }; }
+		PPC_MEMBER_FUNCTION const_iterator begin() const { return { m_root }; }
+		PPC_MEMBER_FUNCTION const_iterator cbegin() const { return { m_root }; }
 
-		iterator end() { return { nullptr }; }
-		const_iterator end() const { return { nullptr }; }
-		const_iterator cend() { return { nullptr }; }
+		PPC_MEMBER_FUNCTION iterator end() { return { nullptr }; }
+		PPC_MEMBER_FUNCTION const_iterator end() const { return { nullptr }; }
+		PPC_MEMBER_FUNCTION const_iterator cend() { return { nullptr }; }
 
-		size_type size() const { return m_size; }
-		bool empty() const { return m_size == 0; }
+		PPC_MEMBER_FUNCTION size_type size() const { return m_size; }
+		PPC_MEMBER_FUNCTION bool empty() const { return m_size == 0; }
 
-		void clear()
+		PPC_MEMBER_FUNCTION void clear()
 		{
 			deallocate(m_root);
 			m_root = nullptr;
@@ -303,7 +304,7 @@ namespace ppc
 			typename Comparator1,
 			typename Allocator1
 		>
-		void assign(const volume_tree<V1, T1, Intersect1, Expand1, Comparator1, Allocator1>& other)
+		PPC_MEMBER_FUNCTION void assign(const volume_tree<V1, T1, Intersect1, Expand1, Comparator1, Allocator1>& other)
 		{
 			//TODO: copy intersect, expand, comparator, allocator?
 			for (const auto& value : other)
@@ -314,7 +315,7 @@ namespace ppc
 
 	private:
 
-		size_type height() const
+		PPC_MEMBER_FUNCTION size_type height() const
 		{
 			//TODO: determine without iterating it
 			size_type height = 0;
@@ -322,7 +323,7 @@ namespace ppc
 			return height;
 		}
 
-		std::pair<node_ptr, size_type> find_parent(node_ptr node, size_type level)
+		PPC_MEMBER_FUNCTION std::pair<node_ptr, size_type> find_parent(node_ptr node, size_type level)
 		{
 			if (node->right)		//Parent node
 			{
@@ -347,7 +348,7 @@ namespace ppc
 			}
 		}
 
-		void set_left(node_ptr parent, node_ptr left, bool update = true)
+		PPC_MEMBER_FUNCTION void set_left(node_ptr parent, node_ptr left, bool update = true)
 		{
 			assert(left);
 
@@ -359,7 +360,7 @@ namespace ppc
 			}
 		}
 
-		void set_right(node_ptr parent, node_ptr right, bool update = true)
+		PPC_MEMBER_FUNCTION void set_right(node_ptr parent, node_ptr right, bool update = true)
 		{
 			assert(right);
 
@@ -371,7 +372,7 @@ namespace ppc
 			}
 		}
 
-		void update_volumes(node_ptr node)
+		PPC_MEMBER_FUNCTION void update_volumes(node_ptr node)
 		{
 			while (node)
 			{
@@ -380,7 +381,7 @@ namespace ppc
 			}
 		}
 
-		void update_volume(node_ptr node)
+		PPC_MEMBER_FUNCTION void update_volume(node_ptr node)
 		{
 			assert(node);
 
@@ -396,7 +397,7 @@ namespace ppc
 			}
 		}
 
-		std::pair<node_ptr, node_ptr> allocate_chain(size_type size)
+		PPC_MEMBER_FUNCTION std::pair<node_ptr, node_ptr> allocate_chain(size_type size)
 		{
 			auto chainRoot = m_allocator.allocate(node_type{});
 			auto node = chainRoot;
@@ -409,7 +410,7 @@ namespace ppc
 			return { chainRoot, node };
 		}
 
-		node_ptr find_node(node_ptr node, const volume_type& volume) const
+		PPC_MEMBER_FUNCTION node_ptr find_node(node_ptr node, const volume_type& volume) const
 		{
 			if (!m_intersects(node->volume, volume))
 			{
@@ -442,7 +443,7 @@ namespace ppc
 			return nullptr;
 		}
 
-		void deallocate(node_ptr node)
+		PPC_MEMBER_FUNCTION void deallocate(node_ptr node)
 		{
 			if (!node)
 			{

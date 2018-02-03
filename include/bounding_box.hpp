@@ -18,7 +18,7 @@ namespace ppc
 		scalar_type z;
 
 		template <typename U>
-		bool operator==(const point<U>& other) const
+		PPC_MEMBER_FUNCTION bool operator==(const point<U>& other) const
 		{
 			return x == other.x
 				&& y == other.y
@@ -26,7 +26,7 @@ namespace ppc
 		}
 
 		template <typename U>
-		bool operator!=(const point<U>& other) const
+		PPC_MEMBER_FUNCTION bool operator!=(const point<U>& other) const
 		{
 			return !(*this == other);
 		}
@@ -41,7 +41,7 @@ namespace ppc
 		point_type min{};
 		point_type max{};
 
-		point_type center() const
+		PPC_MEMBER_FUNCTION point_type center() const
 		{
 			return {
 				(min.x + max.x) / static_cast<scalar_type>(2),
@@ -51,19 +51,19 @@ namespace ppc
 		}
 
 		template <typename U>
-		bool operator==(const bounding_box<U>& other) const
+		PPC_MEMBER_FUNCTION bool operator==(const bounding_box<U>& other) const
 		{
 			return min == other.min && max == other.max;
 		}
 
 		template <typename U>
-		bool operator!=(const bounding_box<U>& other) const
+		PPC_MEMBER_FUNCTION bool operator!=(const bounding_box<U>& other) const
 		{
 			return !(*this == other);
 		}
 
 		template <typename U>
-		bool operator<(const bounding_box<U>& other) const
+		PPC_MEMBER_FUNCTION bool operator<(const bounding_box<U>& other) const
 		{
 			const auto thisCenter = center();
 			const auto otherCenter = other.center();
@@ -75,7 +75,7 @@ namespace ppc
 	struct Expand
 	{
 		template <typename T>
-		void operator()(bounding_box<T>& box, const typename bounding_box<T>::point_type& point)
+		PPC_MEMBER_FUNCTION void operator()(bounding_box<T>& box, const typename bounding_box<T>::point_type& point)
 		{
 			const auto& min = box.min;
 			const auto& max = box.max;
@@ -85,7 +85,7 @@ namespace ppc
 		}
 
 		template <typename T>
-		void operator()(bounding_box<T>& box1, const bounding_box<T>& box2)
+		PPC_MEMBER_FUNCTION void operator()(bounding_box<T>& box1, const bounding_box<T>& box2)
 		{
 			(*this)(box1, box2.min);
 			(*this)(box1, box2.max);
@@ -95,7 +95,7 @@ namespace ppc
 	struct Intersect
 	{
 		template <typename T>
-		bool operator()(const bounding_box<T>& box1, const bounding_box<T>& box2) const
+		PPC_MEMBER_FUNCTION bool operator()(const bounding_box<T>& box1, const bounding_box<T>& box2) const
 		{
 			bool noIntersection =
 				box1.max.x < box2.min.x || box1.min.x > box2.max.x ||
