@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-#define PPC_SORTED_INSERT
+#define PPC_NO_SORT_INSERT	//After inserting all elements need to create an optimize 
 
 namespace ppc
 {
@@ -196,7 +196,7 @@ namespace ppc
 				m_root = newRoot;
 				++m_size;
 
-#ifdef PPC_SORTED_INSERT
+#ifndef PPC_NO_SORT_INSERT
 				if (!m_compare(m_root->left->volume, m_root->right->volume))
 				{
 					std::swap(*m_root->left, *m_root->right);
@@ -235,7 +235,7 @@ namespace ppc
 					set_left(chainEnd, newNode);
 				}
 				
-#ifdef PPC_SORTED_INSERT
+#ifndef PPC_NO_SORT_INSERT
 				auto posIt = std::lower_bound(begin(), end(), value,
 					[&](const value_type& lhs, const value_type& rhs)
 					{

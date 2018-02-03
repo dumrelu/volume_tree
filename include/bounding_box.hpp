@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <tuple>
 
 namespace ppc
 {
