@@ -92,15 +92,19 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="cuda_box_tree.cu" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\..\include\bounding_box.hpp" />
     <ClInclude Include="..\..\..\include\config.hpp" />
     <ClInclude Include="..\..\..\include\host_allocator.hpp" />
     <ClInclude Include="..\..\..\include\volume_tree.hpp" />
+    <ClInclude Include="box_tree_interface.hpp" />
+    <ClInclude Include="cpu_box_tree.hpp" />
     <ClInclude Include="cuda_box_tree.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="cuda_box_tree.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,128 +1,189 @@
 #include "cuda_box_tree.hpp"
 
 #include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
-#include <cstdio>
+#include <algorithm>
+#include <iostream>
+#include <stdexcept>
 
-__device__ ppc::cuda::box_tree* g_tree;
+using bbox = ppc::box_tree::bbox;
+using bboxes = ppc::box_tree::bboxes;
+using value = ppc::box_tree::value;
+using box_value_pair = ppc::box_tree::box_value_pair;
+using bbox_tree = ppc::volume_tree<
+	bbox,
+	int,
+	ppc::Intersect,
+	ppc::Expand,
+	std::less<bbox>,
+	ppc::host_allocator
+>;
 
-__global__ void insert_values_kernel(ppc::cuda::value_type* values, std::size_t size)
+__device__ bbox_tree* g_tree = nullptr;
+
+__global__ void init_kernel()
 {
-	if (!g_tree)
+	if (g_tree)
 	{
-		g_tree = new ppc::cuda::box_tree{};
+		delete g_tree;
 	}
+	
+	g_tree = new bbox_tree{};
+}
 
-	for (std::size_t i = 0; i < size; ++i)
+__global__ void destroy_kernel()
+{
+	if (g_tree)
+	{
+		delete g_tree;
+	}
+}
+
+__global__ void insert_kernel(box_value_pair* values, std::size_t numOfValues)
+{
+	for (std::size_t i = 0; i < numOfValues; ++i)
 	{
 		g_tree->insert(values[i]);
 	}
 }
 
-__global__ void print_values_kernel(std::size_t* numOfItems)
+__global__ void size_kernel(std::size_t* size)
 {
-	if (!g_tree)
-	{
-		std::printf("No values.\n");
-		*numOfItems = 0;
-	}
-	else
-	{
-		*numOfItems = g_tree->size();
-
-		/*std::printf("Box tree: ");
-		for (const auto& values : *g_tree)
-		{
-			std::printf("%d ", values.second);
-		}
-		std::printf("\n");*/
-	}
-
-	delete g_tree;
+	*size = g_tree->size();
 }
 
-//find_values_kernel<<<NUM_OF_BLOKS, NUM_OF_THREADS>>>(d_boxes, d_results, d_numOfResults);
-__global__ void find_values_kernel(
-	ppc::cuda::bbox* boxes, int numOfBoxes, 
-	int* results, int* numOfResults)
+__global__ void find_kernel(bbox* boxes, std::size_t numOfBoxes, value* results)
 {
-	const int index = blockDim.x * blockIdx.x + threadIdx.x;
+	//TODO: shared results?
+
+	const auto index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index < numOfBoxes)
 	{
 		auto it = g_tree->find(boxes[index]);
+		value val = -1;
 		if (it != g_tree->end())
 		{
-			results[index] = it->second;
-			atomicAdd(numOfResults, 1);
+			val = it->second;
 		}
-		else
-		{
-			results[index] = -1;
-		}
+
+		//results[index] = val;
 	}
 }
 
 namespace ppc
 {
-	namespace cuda
+	namespace box_tree
 	{
-		void insert_values(std::vector<value_type> values)
+		cuda_box_tree::cuda_box_tree()
 		{
-			const auto size = sizeof(value_type) * values.size();
-			value_type* d_values = nullptr;
-			cudaMalloc(&d_values, size);
-			cudaMemcpy(d_values, &values[0], size, cudaMemcpyHostToDevice);
+			auto cudaStatus = cudaSetDevice(0);
+			if (cudaStatus != cudaSuccess) 
+			{
+				std::cerr << "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?";
+				throw std::runtime_error{ "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?" };
+			}
 
-			insert_values_kernel<<<1,1>>>(d_values, static_cast<int>(values.size()));
+			auto printStackAndHeapSizes = [](std::string when)
+			{
+				std::size_t stackSize = 0;
+				std::size_t heapSize = 0;
+				cudaDeviceGetLimit(&stackSize, cudaLimitStackSize);
+				cudaDeviceGetLimit(&heapSize, cudaLimitMallocHeapSize);
+				std::cout << when << " stack size: " << stackSize << ", " << when << " heap size: " << heapSize << std::endl;
+			};
 
-			cudaDeviceSynchronize();
+			printStackAndHeapSizes("Current");
+
+			auto error = cudaDeviceSetLimit(cudaLimitStackSize, 100 * 1024);
+			if (error != cudaSuccess)
+			{
+				std::cerr << "Can't set the stack size!" << std::endl;
+				throw std::runtime_error{ "Can't set the stack size!" };
+			}
+
+			printStackAndHeapSizes("New");
+
+			init_kernel<<<1,1>>>();
+			check_for_errors();
+		}
+
+		cuda_box_tree::~cuda_box_tree()
+		{
+			destroy_kernel<<<1,1>>>();
+			check_for_errors();
+		}
+
+		void cuda_box_tree::insert(const box_value_pair& value)
+		{
+			insert(box_value_pairs{ value });
+		}
+
+		void cuda_box_tree::insert(const box_value_pairs& values)
+		{
+			const auto valuesSize = sizeof(box_value_pair) * values.size();
+
+			box_value_pair* d_values{};
+			cudaMalloc(&d_values, valuesSize);
+			cudaMemcpy(d_values, &values[0], valuesSize, cudaMemcpyHostToDevice);
+
+			insert_kernel<<<1,1>>>(d_values, values.size());
+			check_for_errors();
+
 			cudaFree(d_values);
 		}
 
-		void print_values()
+		std::size_t cuda_box_tree::size() const
 		{
-			std::size_t* d_numOfItems;
-			cudaMalloc(&d_numOfItems, sizeof(std::size_t));
+			std::size_t* d_size{};
+			cudaMalloc(&d_size, sizeof(std::size_t));
 
-			print_values_kernel<<<1,1>>>(d_numOfItems);
+			size_kernel<<<1,1>>>(d_size);
+			check_for_errors();
 
-			std::size_t numOfItems = 0;
-			cudaMemcpy(&numOfItems, d_numOfItems, sizeof(std::size_t), cudaMemcpyDeviceToHost);
-			printf("Number of items: %d\n", static_cast<int>(numOfItems));
+			std::size_t treeSize{};
+			cudaMemcpy(&treeSize, d_size, sizeof(std::size_t), cudaMemcpyDeviceToHost);
+
+			cudaFree(d_size);
+			return treeSize;
 		}
 
-		std::vector<int> find_values(const std::vector<bbox>& boxes)
+		values cuda_box_tree::find(const bboxes& boxes) const
 		{
-			constexpr auto NUM_OF_THREADS_PER_BLOCK = 512;
-			const auto numOfBlocks = static_cast<int>(std::ceil(boxes.size() / static_cast<double>(NUM_OF_THREADS_PER_BLOCK)));
+			constexpr auto numOfThreads = 512;
+			const auto numOfBlocks = static_cast<int>(std::ceil(boxes.size() / static_cast<double>(numOfThreads)));
 
-			bbox* d_boxes;
-			int* d_results;
-			int* d_numOfResults;
-			cudaMalloc(&d_boxes, sizeof(bbox) * boxes.size());
-			cudaMalloc(&d_results, sizeof(int) * boxes.size());
-			cudaMalloc(&d_numOfResults, sizeof(int));
+			const auto boxesSize = sizeof(bbox) * boxes.size();
+			const auto valuesSize = sizeof(value) * boxes.size();
+			
+			bbox* d_boxes{};
+			cudaMalloc(&d_boxes, boxesSize);
+			cudaMemcpy(d_boxes, &boxes[0], boxesSize, cudaMemcpyHostToDevice);
 
-			cudaMemcpy(d_boxes, &boxes[0], sizeof(bbox) * boxes.size(), cudaMemcpyHostToDevice);
+			value* d_values{};
+			cudaMalloc(&d_values, valuesSize);
 
-			int zero = 0;
-			cudaMemcpy(d_numOfResults, &zero, sizeof(int), cudaMemcpyHostToDevice);
+			find_kernel<<<numOfBlocks,numOfThreads>>>(d_boxes, boxes.size(), d_values);
+			check_for_errors();
 
-			find_values_kernel<<<numOfBlocks, NUM_OF_THREADS_PER_BLOCK>>>(
-				d_boxes, static_cast<int>(boxes.size()),
-				d_results, d_numOfResults);
-
-			int numOfResults = 0;
-			cudaMemcpy(&numOfResults, d_numOfResults, sizeof(int), cudaMemcpyDeviceToHost);
-
-			std::vector<int> results(numOfResults);
-			cudaMemcpy(&results[0], d_results, sizeof(int) * numOfResults, cudaMemcpyDeviceToHost);
-
+			values valsBuffer(boxes.size());
+			cudaMemcpy(&valsBuffer[0], d_values, valuesSize, cudaMemcpyDeviceToHost);
+			valsBuffer.erase(std::remove(valsBuffer.begin(), valsBuffer.end(), -1), valsBuffer.end());
+			
 			cudaFree(d_boxes);
-			cudaFree(d_results);
-			cudaFree(d_numOfResults);
+			cudaFree(d_values);
 
-			return results;
+			return valsBuffer;
+		}
+
+		void cuda_box_tree::check_for_errors() const
+		{
+			auto cudaStatus = cudaGetLastError();
+			if (cudaStatus != cudaSuccess) 
+			{
+				std::cerr << "Cuda error: " << cudaGetErrorString(cudaStatus) << std::endl;
+				throw std::runtime_error{ "Cuda error" };
+			}
 		}
 	}
 }
