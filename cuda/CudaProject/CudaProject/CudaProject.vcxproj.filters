@@ -21,5 +21,9 @@
     <ClInclude Include="..\..\..\include\volume_tree.hpp">
       <Filter>volume_tree</Filter>
     </ClInclude>
+    <ClInclude Include="cuda_box_tree.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cuda_box_tree.cu" />
   </ItemGroup>
 </Project>
