@@ -53,6 +53,7 @@ __global__ void size_kernel(std::size_t* size)
 	*size = g_tree->size();
 }
 
+#define FINDS_PER_THREAD 1
 __global__ void find_kernel(bbox* boxes, std::size_t numOfBoxes, value* results)
 {
 	//TODO: shared results?
@@ -67,8 +68,29 @@ __global__ void find_kernel(bbox* boxes, std::size_t numOfBoxes, value* results)
 			val = it->second;
 		}
 
-		//results[index] = val;
+		results[index] = val;
 	}
+
+	/*
+	const auto startIndex = blockIdx.x * blockDim.x + threadIdx.x * FINDS_PER_THREAD;
+	auto endIndex = startIndex + FINDS_PER_THREAD;
+	if (endIndex > numOfBoxes)
+	{
+		endIndex = numOfBoxes;
+	}
+
+	for (int i = startIndex; i < endIndex; ++i)
+	{
+		auto it = g_tree->find(boxes[i]);
+		value val = -1;
+		if (it != g_tree->end())
+		{
+			val = it->second;
+		}
+
+		results[i] = val;
+	}
+	*/
 }
 
 namespace ppc
@@ -150,8 +172,8 @@ namespace ppc
 
 		values cuda_box_tree::find(const bboxes& boxes) const
 		{
-			constexpr auto numOfThreads = 512;
-			const auto numOfBlocks = static_cast<int>(std::ceil(boxes.size() / static_cast<double>(numOfThreads)));
+			constexpr auto numOfThreads = 1024;
+			const auto numOfBlocks = static_cast<int>(std::ceil(boxes.size() / static_cast<double>(numOfThreads * FINDS_PER_THREAD)));
 
 			const auto boxesSize = sizeof(bbox) * boxes.size();
 			const auto valuesSize = sizeof(value) * boxes.size();

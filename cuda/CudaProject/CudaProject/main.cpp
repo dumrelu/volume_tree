@@ -47,12 +47,18 @@ int main()
 		bboxes.push_back(boxValuePairs.back().first);
 	}
 
-	for (int j = 0; j < 5; ++j)
+	/*for (int j = 0; j < 100; ++j)
 	{
 		for (auto i = 0; i < N; ++i)
 		{
 			bboxes.push_back(bboxes[i]);
 		}
+	}*/
+
+	bboxes.clear();
+	for (int i = 0; i < 100000; ++i)
+	{
+		bboxes.push_back(generateRandomBox());
 	}
 
 	for (const auto& tree : trees)
